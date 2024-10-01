@@ -11,6 +11,7 @@
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #endif
+#include <vector>
 
 
 // CAboutDlg dialog used for App About
@@ -95,7 +96,8 @@ LRESULT CTSSprojectDlg::OnDrawImage(WPARAM wParam, LPARAM lParam)
 
 LRESULT CTSSprojectDlg::OnDrawHist(WPARAM wParam, LPARAM lParam)
 {
-	//gr->DrawCurve();
+
+
 	return LRESULT();
 }
 
@@ -187,13 +189,59 @@ HCURSOR CTSSprojectDlg::OnQueryDragIcon()
 }
 
 
-
-
 void CTSSprojectDlg::OnFileOpen()
 {
-	// TODO: Add your command handler code here
-}
+	// File filter for image types
+	CString filter = _T("Image Files (*.png;*.bmp;*.jpg)|*.png;*.bmp;*.jpg|All Files (*.*)|*.*||");
 
+	// Create an open file dialog allowing multiple selection
+	CFileDialog dlg(TRUE, NULL, NULL, OFN_ALLOWMULTISELECT | OFN_FILEMUSTEXIST, filter, this);
+
+	// Buffer for selected file paths
+	const int maxFiles = 100;
+	const int maxFilePath = 512;
+	wchar_t fileBuffer[maxFiles * maxFilePath] = { 0 };  // Initialize with zeros
+
+	dlg.m_ofn.lpstrFile = fileBuffer;
+	dlg.m_ofn.nMaxFile = sizeof(fileBuffer) / sizeof(fileBuffer[0]);
+
+	if (dlg.DoModal() == IDOK)
+	{
+		POSITION pos = dlg.GetStartPosition();
+		int id = 0;
+		while (pos != NULL)
+		{
+			CString filePath = dlg.GetNextPathName(pos);
+
+			// Extract file name from the full path
+			CString fileName = filePath.Mid(filePath.ReverseFind(_T('\\')) + 1);
+
+			// Read file data (simplified, in practice, you would handle the image loading properly)
+			CFile file;
+			if (file.Open(filePath, CFile::modeRead))
+			{
+				ULONGLONG fileSize = file.GetLength();
+				std::vector<BYTE> imageData(static_cast<size_t>(fileSize));
+				file.Read(imageData.data(), static_cast<UINT>(fileSize));
+				file.Close();
+
+				int width = 100;   // Placeholder value for width
+				int height = 100;  // Placeholder value for height
+				CString pixelFormat = _T("RGB");  // Example pixel format
+
+				// Create a new CustomImage object and add it to the vector
+				CustomImage img(id++, fileName, imageData, width, height, pixelFormat, filePath);
+				imageList.push_back(img);
+			}
+		}
+	}
+
+	// Update the file list control with the new images
+	for (const auto& image : imageList)
+	{
+		m_fileList.InsertItem(0, image.Name);  // Add the image name to the list control
+	}
+}
 
 void CTSSprojectDlg::OnFileClose()
 {

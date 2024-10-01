@@ -1,8 +1,12 @@
 
 // TSSprojectDlg.h : header file
 //
+#include <iostream>
+#include <vector>
+#include "CustomImage.h"
 
 #pragma once
+using namespace std;
 
 
 enum
@@ -43,6 +47,10 @@ public:
 // Implementation
 protected:
 	HICON m_hIcon;
+
+	std::vector<CustomImage> imageList;
+
+	//afx_msg void OnFileOpen();   // Function to handle the "Open" action
 
 	afx_msg LRESULT OnDrawImage(WPARAM wParam, LPARAM lParam);
 	afx_msg LRESULT OnDrawHist(WPARAM wParam, LPARAM lParam);
