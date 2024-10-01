@@ -5,6 +5,25 @@
 #pragma once
 
 
+enum
+{
+	WM_DRAW_IMAGE = WM_USER + 1,
+	WM_DRAW_HISTOGRAM
+};
+
+class CStaticImage : public CStatic
+{
+public:
+	void DrawItem(LPDRAWITEMSTRUCT lpDrawItemStruct) override;
+};
+
+class CStaticHistogram : public CStatic
+{
+public:
+	void DrawItem(LPDRAWITEMSTRUCT lpDrawItemStruct) override;
+};
+
+
 // CTSSprojectDlg dialog
 class CTSSprojectDlg : public CDialogEx
 {
@@ -25,6 +44,9 @@ public:
 protected:
 	HICON m_hIcon;
 
+	afx_msg LRESULT OnDrawImage(WPARAM wParam, LPARAM lParam);
+	afx_msg LRESULT OnDrawHist(WPARAM wParam, LPARAM lParam);
+
 	// Generated message map functions
 	virtual BOOL OnInitDialog();
 	afx_msg void OnSysCommand(UINT nID, LPARAM lParam);
@@ -34,8 +56,8 @@ protected:
 public:
 	
 	CListCtrl m_fileList;
-	CStatic m_staticImage;
-	CStatic m_staticHistogram;
+	CStaticImage m_staticImage;
+	CStaticHistogram m_staticHistogram;
 	afx_msg void OnFileOpen();
 	afx_msg void OnFileClose();
 	afx_msg void OnSize(UINT nType, int cx, int cy);

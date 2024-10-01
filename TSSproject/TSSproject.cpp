@@ -1,4 +1,3 @@
-
 // TSSproject.cpp : Defines the class behaviors for the application.
 //
 
@@ -6,6 +5,9 @@
 #include "framework.h"
 #include "TSSproject.h"
 #include "TSSprojectDlg.h"
+#include <Gdiplus.h>
+
+using namespace Gdiplus;
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -70,6 +72,10 @@ BOOL CTSSprojectApp::InitInstance()
 	// TODO: You should modify this string to be something appropriate
 	// such as the name of your company or organization
 	SetRegistryKey(_T("Local AppWizard-Generated Applications"));
+
+	GdiplusStartupInput gdiplusStartupInput;
+	ULONG_PTR gdiplusToken;
+	GdiplusStartup(&gdiplusToken, &gdiplusStartupInput, NULL);
 
 	CTSSprojectDlg dlg;
 	m_pMainWnd = &dlg;

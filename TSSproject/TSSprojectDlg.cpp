@@ -70,11 +70,36 @@ BEGIN_MESSAGE_MAP(CTSSprojectDlg, CDialogEx)
 	ON_WM_QUERYDRAGICON()
 	ON_COMMAND(ID_FILE_OPEN, &CTSSprojectDlg::OnFileOpen)
 	ON_COMMAND(ID_FILE_CLOSE, &CTSSprojectDlg::OnFileClose)
+	ON_MESSAGE(WM_DRAW_IMAGE, OnDrawImage)
+	ON_MESSAGE(WM_DRAW_HISTOGRAM, OnDrawHist)
 	ON_WM_SIZE()
 END_MESSAGE_MAP()
 
 
 // CTSSprojectDlg message handlers
+
+
+LRESULT CTSSprojectDlg::OnDrawImage(WPARAM wParam, LPARAM lParam)
+{
+	LPDRAWITEMSTRUCT st = (LPDRAWITEMSTRUCT)wParam;
+
+	//CDC* pDC = CDC::FromHandle(st->hDC);
+
+	auto gr = Gdiplus::Graphics::FromHDC(st->hDC);
+
+	//gr->DrawImage();
+
+
+	return LRESULT();
+}
+
+LRESULT CTSSprojectDlg::OnDrawHist(WPARAM wParam, LPARAM lParam)
+{
+	//gr->DrawCurve();
+	return LRESULT();
+}
+
+
 
 BOOL CTSSprojectDlg::OnInitDialog()
 {
@@ -207,4 +232,16 @@ void CTSSprojectDlg::OnSize(UINT nType, int cx, int cy)
 	}
 
 	Invalidate(TRUE);
+}
+
+void CStaticImage::DrawItem(LPDRAWITEMSTRUCT lpDrawItemStruct)
+{
+
+	GetParent()->SendMessage(WM_DRAW_IMAGE, (WPARAM)lpDrawItemStruct);
+
+}
+
+void CStaticHistogram::DrawItem(LPDRAWITEMSTRUCT lpDrawItemStruct)
+{
+	GetParent()->SendMessage(WM_DRAW_HISTOGRAM, (WPARAM)lpDrawItemStruct);
 }
