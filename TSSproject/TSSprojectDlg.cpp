@@ -203,12 +203,13 @@ void CTSSprojectDlg::OnFileOpen()
 	wchar_t fileBuffer[maxFiles * maxFilePath] = { 0 };  // Initialize with zeros
 
 	dlg.m_ofn.lpstrFile = fileBuffer;
-	dlg.m_ofn.nMaxFile = sizeof(fileBuffer) / sizeof(fileBuffer[0]);
+	dlg.m_ofn.nMaxFile = maxFiles * maxFilePath;  // Correct size for nMaxFile
 
 	if (dlg.DoModal() == IDOK)
 	{
 		POSITION pos = dlg.GetStartPosition();
-		int id = 0;
+		int id = imageList.size();  // Start ID at the current size of the image list
+
 		while (pos != NULL)
 		{
 			CString filePath = dlg.GetNextPathName(pos);
@@ -216,32 +217,76 @@ void CTSSprojectDlg::OnFileOpen()
 			// Extract file name from the full path
 			CString fileName = filePath.Mid(filePath.ReverseFind(_T('\\')) + 1);
 
-			// Read file data (simplified, in practice, you would handle the image loading properly)
-			CFile file;
-			if (file.Open(filePath, CFile::modeRead))
+			// Check if the image is already in the list (avoid duplicates)
+			bool isDuplicate = false;
+			for (const auto& img : imageList)
 			{
-				ULONGLONG fileSize = file.GetLength();
-				std::vector<BYTE> imageData(static_cast<size_t>(fileSize));
-				file.Read(imageData.data(), static_cast<UINT>(fileSize));
-				file.Close();
+				if (img.Path == filePath)
+				{
+					isDuplicate = true;
+					break;
+				}
+			}
+			if (isDuplicate)
+			{
+				continue;  // Skip if the file is already in the list
+			}
 
-				int width = 100;   // Placeholder value for width
-				int height = 100;  // Placeholder value for height
-				CString pixelFormat = _T("RGB");  // Example pixel format
+			// Use GDI+ to load the image and retrieve width and height
+			Gdiplus::Bitmap* bitmap = Gdiplus::Bitmap::FromFile(filePath);
+			if (bitmap != nullptr && bitmap->GetLastStatus() == Gdiplus::Ok)
+			{
+				// Get the actual width and height
+				int width = bitmap->GetWidth();
+				int height = bitmap->GetHeight();
 
-				// Create a new CustomImage object and add it to the vector
-				CustomImage img(id++, fileName, imageData, width, height, pixelFormat, filePath);
-				imageList.push_back(img);
+				// Placeholder for pixel format (adjust if necessary)
+				CString pixelFormat = _T("RGB");
+
+				// Read file data (simplified, in practice, you would handle the image loading properly)
+				CFile file;
+				if (file.Open(filePath, CFile::modeRead))
+				{
+					ULONGLONG fileSize = file.GetLength();
+					std::vector<BYTE> imageData(static_cast<size_t>(fileSize));
+					file.Read(imageData.data(), static_cast<UINT>(fileSize));
+					file.Close();
+
+					// Create a new CustomImage object and add it to the vector
+					CustomImage img(id++, fileName, imageData, width, height, pixelFormat, filePath);
+					imageList.push_back(img);
+				}
+
+				CFileException fileException;
+				if (!file.Open(filePath, CFile::modeRead | CFile::shareDenyWrite, &fileException))
+				{
+					CString errorMessage;
+					errorMessage.Format(_T("Failed to open file. Error code: %d"), fileException.m_cause);
+					AfxMessageBox(errorMessage);
+					return;
+				}
+
+
+
+				// Clean up the GDI+ Bitmap object
+				delete bitmap;
+			}
+			else
+			{
+				AfxMessageBox(_T("Failed to load image."));
 			}
 		}
 	}
 
 	// Update the file list control with the new images
+	m_fileList.DeleteAllItems();  // Clear the current list
 	for (const auto& image : imageList)
 	{
-		m_fileList.InsertItem(0, image.Name);  // Add the image name to the list control
+		int index = m_fileList.GetItemCount();  // Insert at the end of the list
+		m_fileList.InsertItem(index, image.Name);  // Add the image name to the list control
 	}
 }
+
 
 void CTSSprojectDlg::OnFileClose()
 {
@@ -255,32 +300,32 @@ void CTSSprojectDlg::OnSize(UINT nType, int cx, int cy)
 
 	if (::IsWindow(m_staticImage.m_hWnd) && ::IsWindow(m_staticHistogram.m_hWnd) && ::IsWindow(m_fileList.m_hWnd))
 	{
-		CRect rectHistogram;
-		m_staticHistogram.GetWindowRect(&rectHistogram);
-		ScreenToClient(&rectHistogram); 
+		// Constants to define spacing and layout
+		const int padding = 10;  // Padding between elements
+		const int columnWidth = 250;  // Fixed width of the left column (file list + histogram)
+		const int histogramSize = 250;  // Fixed size of the histogram (250x250)
 
-		int histogramTop = cy - rectHistogram.Height() - 10; 
-		m_staticHistogram.SetWindowPos(NULL, rectHistogram.left, histogramTop, rectHistogram.Width(), rectHistogram.Height(), SWP_NOZORDER);
+		// Position and size the histogram in the bottom left corner
+		int histogramX = padding;  // Keep it at the left
+		int histogramY = cy - histogramSize - padding;  // Bottom left corner
+		m_staticHistogram.SetWindowPos(NULL, histogramX, histogramY, histogramSize, histogramSize, SWP_NOZORDER);
 
-		CRect rectFileList;
-		m_fileList.GetWindowRect(&rectFileList);
-		ScreenToClient(&rectFileList);
+		// Position and size the file list above the histogram
+		int fileListHeight = histogramY - (2 * padding);  // File list height is dynamic, taking space above the histogram
+		m_fileList.SetWindowPos(NULL, padding, padding, columnWidth, fileListHeight, SWP_NOZORDER);
 
-		int newFileListHeight = histogramTop - rectFileList.top - 10;
-		m_fileList.SetWindowPos(NULL, rectFileList.left, rectFileList.top, rectFileList.Width(), newFileListHeight, SWP_NOZORDER);
+		// Calculate the size and position for the static image on the right
+		int imageX = columnWidth + (2 * padding);  // Start after the left column
+		int imageWidth = cx - imageX - padding;  // Remaining width for the image
+		int imageHeight = cy - (2 * padding);  // Remaining height for the image
 
-		CRect rectImage;
-		m_staticImage.GetWindowRect(&rectImage);
-		ScreenToClient(&rectImage);
-
-		int newImageWidth = cx - rectFileList.Width() - 35;  
-		int newImageHeight = newFileListHeight + rectHistogram.Height() + 10;
-
-		m_staticImage.SetWindowPos(NULL, rectFileList.right + 10, rectImage.top, newImageWidth, newImageHeight, SWP_NOZORDER);
+		// Position and size the image control
+		m_staticImage.SetWindowPos(NULL, imageX, padding, imageWidth, imageHeight, SWP_NOZORDER);
 	}
 
-	Invalidate(TRUE);
+	Invalidate(TRUE);  // Force a redraw to reflect the changes
 }
+
 
 void CStaticImage::DrawItem(LPDRAWITEMSTRUCT lpDrawItemStruct)
 {
