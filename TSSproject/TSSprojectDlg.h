@@ -49,7 +49,6 @@ protected:
 	HICON m_hIcon;
 
 	std::vector<CustomImage> imageList;
-
 	//afx_msg void OnFileOpen();   // Function to handle the "Open" action
 
 	afx_msg LRESULT OnDrawImage(WPARAM wParam, LPARAM lParam);
@@ -69,4 +68,5 @@ public:
 	afx_msg void OnFileOpen();
 	afx_msg void OnFileClose();
 	afx_msg void OnSize(UINT nType, int cx, int cy);
+	afx_msg void OnFileDelete();
 };

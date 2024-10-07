@@ -74,6 +74,7 @@ BEGIN_MESSAGE_MAP(CTSSprojectDlg, CDialogEx)
 	ON_MESSAGE(WM_DRAW_IMAGE, OnDrawImage)
 	ON_MESSAGE(WM_DRAW_HISTOGRAM, OnDrawHist)
 	ON_WM_SIZE()
+	ON_COMMAND(ID_FILE_DELETE, &CTSSprojectDlg::OnFileDelete)
 END_MESSAGE_MAP()
 
 
@@ -100,8 +101,6 @@ LRESULT CTSSprojectDlg::OnDrawHist(WPARAM wParam, LPARAM lParam)
 
 	return LRESULT();
 }
-
-
 
 BOOL CTSSprojectDlg::OnInitDialog()
 {
@@ -151,10 +150,6 @@ void CTSSprojectDlg::OnSysCommand(UINT nID, LPARAM lParam)
 		CDialogEx::OnSysCommand(nID, lParam);
 	}
 }
-
-// If you add a minimize button to your dialog, you will need the code below
-//  to draw the icon.  For MFC applications using the document/view model,
-//  this is automatically done for you by the framework.
 
 void CTSSprojectDlg::OnPaint()
 {
@@ -243,9 +238,10 @@ void CTSSprojectDlg::OnFileOpen()
 				// Placeholder for pixel format (adjust if necessary)
 				CString pixelFormat = _T("RGB");
 
-				// Read file data (simplified, in practice, you would handle the image loading properly)
+				// Attempt to open the file using CFile with error handling
+				CFileException fileException;
 				CFile file;
-				if (file.Open(filePath, CFile::modeRead))
+				if (file.Open(filePath, CFile::modeRead | CFile::shareDenyWrite, &fileException))
 				{
 					ULONGLONG fileSize = file.GetLength();
 					std::vector<BYTE> imageData(static_cast<size_t>(fileSize));
@@ -256,17 +252,13 @@ void CTSSprojectDlg::OnFileOpen()
 					CustomImage img(id++, fileName, imageData, width, height, pixelFormat, filePath);
 					imageList.push_back(img);
 				}
-
-				CFileException fileException;
-				if (!file.Open(filePath, CFile::modeRead | CFile::shareDenyWrite, &fileException))
+				else
 				{
+					// Improved error handling to show the user the error
 					CString errorMessage;
-					errorMessage.Format(_T("Failed to open file. Error code: %d"), fileException.m_cause);
+					errorMessage.Format(_T("Failed to open file: %s. Error code: %d"), filePath, fileException.m_cause);
 					AfxMessageBox(errorMessage);
-					return;
 				}
-
-
 
 				// Clean up the GDI+ Bitmap object
 				delete bitmap;
@@ -274,6 +266,7 @@ void CTSSprojectDlg::OnFileOpen()
 			else
 			{
 				AfxMessageBox(_T("Failed to load image."));
+				delete bitmap; // Ensure proper clean-up if bitmap creation fails
 			}
 		}
 	}
@@ -286,6 +279,42 @@ void CTSSprojectDlg::OnFileOpen()
 		m_fileList.InsertItem(index, image.Name);  // Add the image name to the list control
 	}
 }
+
+
+void CTSSprojectDlg::OnFileDelete()
+{
+	// Get the index of the selected item in the list
+	int selectedItem = m_fileList.GetNextItem(-1, LVNI_SELECTED);
+
+	// If no item is selected, return without doing anything
+	if (selectedItem == -1)
+	{
+		return;
+	}
+
+	// Get the name of the selected file for confirmation
+	CString fileName = m_fileList.GetItemText(selectedItem, 1);
+	CString confirmationMessage;
+	confirmationMessage.Format(_T("Are you sure you want to delete the file: %s?"), fileName);
+
+	// Ask for user confirmation before deleting the file
+	if (AfxMessageBox(confirmationMessage, MB_YESNO | MB_ICONQUESTION) == IDYES)
+	{
+		// Remove the item from the image list
+		imageList.erase(imageList.begin() + selectedItem);
+
+		// Delete the selected item from the list control
+		m_fileList.DeleteItem(selectedItem);
+
+		// If the list is not empty, select the first item
+		if (m_fileList.GetItemCount() > 0)
+		{
+			m_fileList.SetItemState(0, LVIS_SELECTED | LVIS_FOCUSED, LVIS_SELECTED | LVIS_FOCUSED);
+		}
+	}
+}
+
+
 
 
 void CTSSprojectDlg::OnFileClose()
@@ -338,3 +367,4 @@ void CStaticHistogram::DrawItem(LPDRAWITEMSTRUCT lpDrawItemStruct)
 {
 	GetParent()->SendMessage(WM_DRAW_HISTOGRAM, (WPARAM)lpDrawItemStruct);
 }
+

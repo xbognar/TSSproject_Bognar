@@ -11,16 +11,16 @@
 #define IDC_FILE_LIST                   1000
 #define IDC_STATIC_IMAGE                1001
 #define IDC_STATIC_HISTOGRAM            1002
-#define IDC_COMBO1                      1003
 #define ID_FILE_OPEN32771               32771
 #define ID_FILE_CLOSE32772              32772
+#define ID_FILE_DELETE                  32773
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        131
-#define _APS_NEXT_COMMAND_VALUE         32773
+#define _APS_NEXT_COMMAND_VALUE         32774
 #define _APS_NEXT_CONTROL_VALUE         1004
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
