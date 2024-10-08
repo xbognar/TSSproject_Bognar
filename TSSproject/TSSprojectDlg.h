@@ -3,6 +3,7 @@
 //
 #include <iostream>
 #include <vector>
+#include <algorithm>
 #include "CustomImage.h"
 
 #pragma once
@@ -49,10 +50,12 @@ protected:
 	HICON m_hIcon;
 
 	std::vector<CustomImage> imageList;
-	//afx_msg void OnFileOpen();   // Function to handle the "Open" action
+	int selectedIndex = -1;
 
 	afx_msg LRESULT OnDrawImage(WPARAM wParam, LPARAM lParam);
 	afx_msg LRESULT OnDrawHist(WPARAM wParam, LPARAM lParam);
+
+	void OnFileListSelectionChanged(NMHDR* pNMHDR, LRESULT* pResult);
 
 	// Generated message map functions
 	virtual BOOL OnInitDialog();
