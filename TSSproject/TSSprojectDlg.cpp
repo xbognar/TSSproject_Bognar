@@ -78,19 +78,51 @@ BEGIN_MESSAGE_MAP(CTSSprojectDlg, CDialogEx)
 END_MESSAGE_MAP()
 
 
-// CTSSprojectDlg message handlers
-
 
 LRESULT CTSSprojectDlg::OnDrawImage(WPARAM wParam, LPARAM lParam)
 {
-	LPDRAWITEMSTRUCT st = (LPDRAWITEMSTRUCT)wParam;
+	// Check if there are images in the list
+	if (imageList.empty())
+		return LRESULT();
 
-	//CDC* pDC = CDC::FromHandle(st->hDC);
+	// Get the drawing structure
+	LPDRAWITEMSTRUCT lpDrawItemStruct = reinterpret_cast<LPDRAWITEMSTRUCT>(wParam);
+	Gdiplus::Graphics graphics(lpDrawItemStruct->hDC);
 
-	auto gr = Gdiplus::Graphics::FromHDC(st->hDC);
+	// Retrieve the first image's bitmap
+	CustomImage& firstImage = imageList[0];
+	Gdiplus::Bitmap* bitmap = firstImage.Bitmap;
 
-	//gr->DrawImage();
+	if (bitmap != nullptr && bitmap->GetLastStatus() == Gdiplus::Ok)
+	{
+		// Get the dimensions of the staticImage control
+		CRect rect;
+		m_staticImage.GetClientRect(&rect);
 
+		// Scale the image to fit within the staticImage control dimensions
+		int imgWidth = bitmap->GetWidth();
+		int imgHeight = bitmap->GetHeight();
+		int destWidth = rect.Width();
+		int destHeight = rect.Height();
+
+		// Calculate aspect ratio
+		float aspectRatio = static_cast<float>(imgWidth) / imgHeight;
+		if (destWidth / aspectRatio <= destHeight)
+		{
+			destHeight = static_cast<int>(destWidth / aspectRatio);
+		}
+		else
+		{
+			destWidth = static_cast<int>(destHeight * aspectRatio);
+		}
+
+		// Calculate the position to center the image
+		int offsetX = (rect.Width() - destWidth) / 2;
+		int offsetY = (rect.Height() - destHeight) / 2;
+
+		// Draw the scaled image on the staticImage control
+		graphics.DrawImage(bitmap, offsetX, offsetY, destWidth, destHeight);
+	}
 
 	return LRESULT();
 }
@@ -183,7 +215,7 @@ HCURSOR CTSSprojectDlg::OnQueryDragIcon()
 	return static_cast<HCURSOR>(m_hIcon);
 }
 
-
+// Updates in TSSprojectDlg.cpp
 void CTSSprojectDlg::OnFileOpen()
 {
 	// File filter for image types
@@ -238,35 +270,16 @@ void CTSSprojectDlg::OnFileOpen()
 				// Placeholder for pixel format (adjust if necessary)
 				CString pixelFormat = _T("RGB");
 
-				// Attempt to open the file using CFile with error handling
-				CFileException fileException;
-				CFile file;
-				if (file.Open(filePath, CFile::modeRead | CFile::shareDenyWrite, &fileException))
-				{
-					ULONGLONG fileSize = file.GetLength();
-					std::vector<BYTE> imageData(static_cast<size_t>(fileSize));
-					file.Read(imageData.data(), static_cast<UINT>(fileSize));
-					file.Close();
-
-					// Create a new CustomImage object and add it to the vector
-					CustomImage img(id++, fileName, imageData, width, height, pixelFormat, filePath);
-					imageList.push_back(img);
-				}
-				else
-				{
-					// Improved error handling to show the user the error
-					CString errorMessage;
-					errorMessage.Format(_T("Failed to open file: %s. Error code: %d"), filePath, fileException.m_cause);
-					AfxMessageBox(errorMessage);
-				}
-
-				// Clean up the GDI+ Bitmap object
-				delete bitmap;
+				// Create a new CustomImage object and add it to the vector
+				CustomImage img(id++, fileName, bitmap, width, height, pixelFormat, filePath);
+				imageList.push_back(img);
 			}
 			else
 			{
+				if (bitmap != nullptr) {
+					delete bitmap; // Ensure proper clean-up if bitmap creation fails
+				}
 				AfxMessageBox(_T("Failed to load image."));
-				delete bitmap; // Ensure proper clean-up if bitmap creation fails
 			}
 		}
 	}
@@ -278,43 +291,41 @@ void CTSSprojectDlg::OnFileOpen()
 		int index = m_fileList.GetItemCount();  // Insert at the end of the list
 		m_fileList.InsertItem(index, image.Name);  // Add the image name to the list control
 	}
+
+	Invalidate(TRUE);  // Force a redraw to reflect the changes
 }
-
-
 void CTSSprojectDlg::OnFileDelete()
 {
-	// Get the index of the selected item in the list
-	int selectedItem = m_fileList.GetNextItem(-1, LVNI_SELECTED);
+    // Get the index of the selected item in the list
+    int selectedItem = m_fileList.GetNextItem(-1, LVNI_SELECTED);
 
-	// If no item is selected, return without doing anything
-	if (selectedItem == -1)
-	{
-		return;
-	}
+    // If no item is selected, return without doing anything
+    if (selectedItem == -1)
+    {
+        return;
+    }
 
-	// Get the name of the selected file for confirmation
-	CString fileName = m_fileList.GetItemText(selectedItem, 1);
-	CString confirmationMessage;
-	confirmationMessage.Format(_T("Are you sure you want to delete the file: %s?"), fileName);
+    // Get the name of the selected file for confirmation
+    CString fileName = m_fileList.GetItemText(selectedItem, 1);
+    CString confirmationMessage;
+    confirmationMessage.Format(_T("Are you sure you want to delete the file: %s?"), fileName);
 
-	// Ask for user confirmation before deleting the file
-	if (AfxMessageBox(confirmationMessage, MB_YESNO | MB_ICONQUESTION) == IDYES)
-	{
-		// Remove the item from the image list
-		imageList.erase(imageList.begin() + selectedItem);
+    // Ask for user confirmation before deleting the file
+    if (AfxMessageBox(confirmationMessage, MB_YESNO | MB_ICONQUESTION) == IDYES)
+    {
+        // Remove the item from the image list
+        imageList.erase(imageList.begin() + selectedItem);
 
-		// Delete the selected item from the list control
-		m_fileList.DeleteItem(selectedItem);
+        // Delete the selected item from the list control
+        m_fileList.DeleteItem(selectedItem);
 
-		// If the list is not empty, select the first item
-		if (m_fileList.GetItemCount() > 0)
-		{
-			m_fileList.SetItemState(0, LVIS_SELECTED | LVIS_FOCUSED, LVIS_SELECTED | LVIS_FOCUSED);
-		}
-	}
+        // If the list is not empty, select the first item
+        if (m_fileList.GetItemCount() > 0)
+        {
+            m_fileList.SetItemState(0, LVIS_SELECTED | LVIS_FOCUSED, LVIS_SELECTED | LVIS_FOCUSED);
+        }
+    }
 }
-
-
 
 
 void CTSSprojectDlg::OnFileClose()
