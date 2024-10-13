@@ -34,7 +34,7 @@ class CTSSprojectDlg : public CDialogEx
 {
 // Construction
 public:
-	CTSSprojectDlg(CWnd* pParent = nullptr);	// standard constructor
+	CTSSprojectDlg(CWnd* pParent = nullptr);
 
 // Dialog Data
 #ifdef AFX_DESIGN_TIME
@@ -42,7 +42,7 @@ public:
 #endif
 
 	protected:
-	virtual void DoDataExchange(CDataExchange* pDX);	// DDX/DDV support
+	virtual void DoDataExchange(CDataExchange* pDX);	
 
 
 // Implementation
@@ -57,7 +57,6 @@ protected:
 
 	void OnFileListSelectionChanged(NMHDR* pNMHDR, LRESULT* pResult);
 
-	// Generated message map functions
 	virtual BOOL OnInitDialog();
 	afx_msg void OnSysCommand(UINT nID, LPARAM lParam);
 	afx_msg void OnPaint();

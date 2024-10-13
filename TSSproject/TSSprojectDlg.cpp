@@ -13,21 +13,17 @@
 #endif
 #include <vector>
 
-
-// CAboutDlg dialog used for App About
-
 class CAboutDlg : public CDialogEx
 {
 public:
 	CAboutDlg();
 
-// Dialog Data
 #ifdef AFX_DESIGN_TIME
 	enum { IDD = IDD_ABOUTBOX };
 #endif
 
 	protected:
-	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV support
+	virtual void DoDataExchange(CDataExchange* pDX);  
 
 // Implementation
 protected:
@@ -80,8 +76,8 @@ void CTSSprojectDlg::OnFileListSelectionChanged(NMHDR* pNMHDR, LRESULT* pResult)
 
 	if ((pNMLV->uChanged & LVIF_STATE) && (pNMLV->uNewState & LVIS_SELECTED))
 	{
-		selectedIndex = pNMLV->iItem; // Update selected index
-		Invalidate(FALSE); // Redraw with the new selection
+		selectedIndex = pNMLV->iItem; 
+		Invalidate(FALSE);
 	}
 
 	*pResult = 0;
@@ -113,14 +109,12 @@ BOOL CTSSprojectDlg::OnInitDialog()
 
 	// Set the icon for this dialog.  The framework does this automatically
 	//  when the application's main window is not a dialog
-	SetIcon(m_hIcon, TRUE);			// Set big icon
-	SetIcon(m_hIcon, FALSE);		// Set small icon
+	SetIcon(m_hIcon, TRUE);		
+	SetIcon(m_hIcon, FALSE);	
 
 	// TODO: Add extra initialization here
 
-
-
-	return TRUE;  // return TRUE  unless you set the focus to a control
+	return TRUE; 
 }
 
 void CTSSprojectDlg::OnSysCommand(UINT nID, LPARAM lParam)
@@ -140,11 +134,10 @@ void CTSSprojectDlg::OnPaint()
 {
 	if (IsIconic())
 	{
-		CPaintDC dc(this); // device context for painting
+		CPaintDC dc(this); 
 
 		SendMessage(WM_ICONERASEBKGND, reinterpret_cast<WPARAM>(dc.GetSafeHdc()), 0);
 
-		// Center icon in client rectangle
 		int cxIcon = GetSystemMetrics(SM_CXICON);
 		int cyIcon = GetSystemMetrics(SM_CYICON);
 		CRect rect;
@@ -152,7 +145,6 @@ void CTSSprojectDlg::OnPaint()
 		int x = (rect.Width() - cxIcon + 1) / 2;
 		int y = (rect.Height() - cyIcon + 1) / 2;
 
-		// Draw the icon
 		dc.DrawIcon(x, y, m_hIcon);
 	}
 	else
@@ -168,7 +160,6 @@ HCURSOR CTSSprojectDlg::OnQueryDragIcon()
 
 void CTSSprojectDlg::OnFileOpen()
 {
-	// File dialog logic remains the same
 	CString filter = _T("Image Files (*.png;*.bmp;*.jpg)|*.png;*.bmp;*.jpg|All Files (*.*)|*.*||");
 	CFileDialog dlg(TRUE, NULL, NULL, OFN_ALLOWMULTISELECT | OFN_FILEMUSTEXIST, filter, this);
 
@@ -188,7 +179,6 @@ void CTSSprojectDlg::OnFileOpen()
 			CString filePath = dlg.GetNextPathName(pos);
 			CString fileName = filePath.Mid(filePath.ReverseFind(_T('\\')) + 1);
 
-			// Check for duplicates
 			if (std::any_of(imageList.begin(), imageList.end(), [&](const CustomImage& img) { return img.Path == filePath; }))
 				continue;
 
@@ -209,7 +199,6 @@ void CTSSprojectDlg::OnFileOpen()
 		}
 	}
 
-	// Update list control
 	m_fileList.DeleteAllItems();
 	for (const auto& image : imageList)
 	{
@@ -217,12 +206,11 @@ void CTSSprojectDlg::OnFileOpen()
 		m_fileList.InsertItem(index, image.Name);
 	}
 
-	// Automatically load and display the first image if any images were loaded
 	if (!imageList.empty())
 	{
 		selectedIndex = 0;
 		m_fileList.SetItemState(0, LVIS_SELECTED | LVIS_FOCUSED, LVIS_SELECTED | LVIS_FOCUSED);
-		Invalidate(FALSE); // Redraw to display the first image
+		Invalidate(FALSE);
 	}
 }
 
@@ -247,7 +235,7 @@ void CTSSprojectDlg::OnFileDelete()
 		{
 			m_fileList.SetItemState(selectedIndex, LVIS_SELECTED | LVIS_FOCUSED, LVIS_SELECTED | LVIS_FOCUSED);
 		}
-		Invalidate(FALSE); // Redraw the image
+		Invalidate(FALSE);
 	}
 }
 
@@ -262,30 +250,25 @@ void CTSSprojectDlg::OnSize(UINT nType, int cx, int cy)
 
 	if (::IsWindow(m_staticImage.m_hWnd) && ::IsWindow(m_staticHistogram.m_hWnd) && ::IsWindow(m_fileList.m_hWnd))
 	{
-		// Constants to define spacing and layout
-		const int padding = 10;  // Padding between elements
-		const int columnWidth = 250;  // Fixed width of the left column (file list + histogram)
-		const int histogramSize = 250;  // Fixed size of the histogram (250x250)
+		const int padding = 10;  
+		const int columnWidth = 250;  
+		const int histogramSize = 250;  
 
-		// Position and size the histogram in the bottom left corner
-		int histogramX = padding;  // Keep it at the left
-		int histogramY = cy - histogramSize - padding;  // Bottom left corner
+		int histogramX = padding; 
+		int histogramY = cy - histogramSize - padding; 
 		m_staticHistogram.SetWindowPos(NULL, histogramX, histogramY, histogramSize, histogramSize, SWP_NOZORDER);
 
-		// Position and size the file list above the histogram
-		int fileListHeight = histogramY - (2 * padding);  // File list height is dynamic, taking space above the histogram
+		int fileListHeight = histogramY - (2 * padding);  
 		m_fileList.SetWindowPos(NULL, padding, padding, columnWidth, fileListHeight, SWP_NOZORDER);
 
-		// Calculate the size and position for the static image on the right
-		int imageX = columnWidth + (2 * padding);  // Start after the left column
-		int imageWidth = cx - imageX - padding;  // Remaining width for the image
-		int imageHeight = cy - (2 * padding);  // Remaining height for the image
+		int imageX = columnWidth + (2 * padding); 
+		int imageWidth = cx - imageX - padding; 
+		int imageHeight = cy - (2 * padding); 
 
-		// Position and size the image control
 		m_staticImage.SetWindowPos(NULL, imageX, padding, imageWidth, imageHeight, SWP_NOZORDER);
 	}
 
-	Invalidate(FALSE);  // Force a redraw to reflect the changes
+	Invalidate(FALSE); 
 }
 
 void CStaticImage::DrawItem(LPDRAWITEMSTRUCT lpDrawItemStruct)
@@ -340,7 +323,6 @@ LRESULT CTSSprojectDlg::OnDrawImage(WPARAM wParam, LPARAM lParam)
 
 	return LRESULT();
 }
-
 
 LRESULT CTSSprojectDlg::OnDrawHist(WPARAM wParam, LPARAM lParam)
 {
